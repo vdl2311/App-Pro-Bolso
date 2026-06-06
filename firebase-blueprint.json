@@ -1,0 +1,105 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile containing basic config like daily goal and status.",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Used by the admin to revoke access (e.g. if payment fails)"
+        },
+        "metaDiaria": {
+          "type": "number"
+        },
+        "createdAt": {
+          "type": "timestamp"
+        },
+        "updatedAt": {
+          "type": "timestamp"
+        }
+      },
+      "required": ["email", "isActive", "metaDiaria", "createdAt", "updatedAt"]
+    },
+    "EnvelopeSetting": {
+      "title": "EnvelopeSetting",
+      "description": "A single envelope config (percentage logic).",
+      "type": "object",
+      "properties": {
+        "percentage": {
+          "type": "number"
+        },
+        "updatedAt": {
+          "type": "timestamp"
+        }
+      },
+      "required": ["percentage", "updatedAt"]
+    },
+    "Ganho": {
+      "title": "Ganho",
+      "description": "Income/Earnings entry.",
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "number"
+        },
+        "date": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "timestamp"
+        }
+      },
+      "required": ["amount", "date", "createdAt"]
+    },
+    "Gasto": {
+      "title": "Gasto",
+      "description": "Expense entry.",
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "number"
+        },
+        "category": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "timestamp"
+        }
+      },
+      "required": ["amount", "category", "date", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/User"
+      },
+      "description": "Stores user config and active status."
+    },
+    "/users/{userId}/envelopes/{envelopeId}": {
+      "schema": {
+        "$ref": "#/entities/EnvelopeSetting"
+      },
+      "description": "User envelope configurations."
+    },
+    "/users/{userId}/ganhos/{ganhoId}": {
+      "schema": {
+        "$ref": "#/entities/Ganho"
+      },
+      "description": "User income entries."
+    },
+    "/users/{userId}/gastos/{gastoId}": {
+      "schema": {
+        "$ref": "#/entities/Gasto"
+      },
+      "description": "User expense entries."
+    }
+  }
+}

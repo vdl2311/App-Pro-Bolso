@@ -11,8 +11,8 @@ export function Fiscal() {
   const irpfProvision = (totalGanhos * irpfPercentage) / 100;
 
   // Aggregate gastos by category
-  const gastosCombustivel = gastos.filter(g => g.category === 'Combustível');
-  const gastosLocadora = gastos.filter(g => g.category === 'Locadora');
+  const gastosCombustivel = gastos.filter(g => g.category === 'Combustível / Recarga');
+  const gastosLocadora = gastos.filter(g => g.category === 'Locadora / Financiamento');
   const gastosManutencao = gastos.filter(g => g.category === 'Manutenção');
 
   const totalDeducoes = gastos.reduce((acc, curr) => acc + curr.amount, 0);
@@ -77,14 +77,14 @@ export function Fiscal() {
         </h3>
         <div className="flex flex-col gap-4">
           <ReceiptCategory 
-            name="Combustível" 
+            name="Combustível / Recarga" 
             count={gastosCombustivel.length} 
             amount={`R$ ${gastosCombustivel.reduce((acc, g) => acc + g.amount, 0).toFixed(2).replace('.', ',')}`} 
             iconBg="bg-orange-100" 
             iconColor="text-orange-600" 
           />
           <ReceiptCategory 
-            name="Locadora (Aluguel)" 
+            name="Locadora / Financiamento" 
             count={gastosLocadora.length} 
             amount={`R$ ${gastosLocadora.reduce((acc, g) => acc + g.amount, 0).toFixed(2).replace('.', ',')}`} 
             iconBg="bg-blue-100" 

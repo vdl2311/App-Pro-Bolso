@@ -5,8 +5,8 @@ import { useStore } from '@/store';
 import { useState } from 'react';
 
 const iconMap: Record<string, any> = {
-  'Combustível': Car,
-  'Locadora': Wrench,
+  'Combustível / Recarga': Car,
+  'Locadora / Financiamento': Wrench,
   'Lucro Pessoal': Wallet,
   'IRPF': ShieldAlert,
   'Manutenção': Wrench,
@@ -62,7 +62,7 @@ export function Envelopes() {
         <div>
           <h4 className="text-sm font-bold text-emerald-800">Lucro Pessoal Blindado</h4>
           <p className="text-xs text-emerald-700 mt-1.5 leading-relaxed font-medium">
-            O dinheiro do seu lucro "Lucro Pessoal" está protegido. Ele nunca deve se misturar com os gastos de carro, combustível ou aluguel.
+            O dinheiro do seu lucro "Lucro Pessoal" está protegido. Ele nunca deve se misturar com os gastos de carro, combustível/recarga ou aluguel.
           </p>
         </div>
       </div>

@@ -24,6 +24,11 @@ export function Ganhos() {
   const totalGanhos = ganhos.reduce((acc, curr) => acc + curr.amount, 0);
   const mediaSemana = ganhos.length > 0 ? (totalGanhos / ganhos.length) : 0; // Assuming each ganho represents roughly an hour, or we just show avg per entry for simplicity if data is sparse
 
+  const ganhosComTaxa = ganhos.filter(g => g.grossAmount && g.grossAmount > g.amount);
+  const totalGrossComTaxa = ganhosComTaxa.reduce((acc, curr) => acc + (curr.grossAmount || curr.amount), 0);
+  const totalNetComTaxa = ganhosComTaxa.reduce((acc, curr) => acc + curr.amount, 0);
+  const taxaMedia = totalGrossComTaxa > 0 ? ((totalGrossComTaxa - totalNetComTaxa) / totalGrossComTaxa) * 100 : 0;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -34,6 +39,14 @@ export function Ganhos() {
         <h2 className="text-2xl font-bold text-slate-900">Análise de Horários</h2>
         <p className="text-sm text-slate-500 mt-1">Descubra os horários que dão mais dinheiro real.</p>
       </div>
+
+      {taxaMedia > 0 && (
+        <div className="bg-indigo-900 text-white p-6 rounded-3xl shadow-md border border-indigo-800">
+          <h3 className="text-sm font-bold text-indigo-300 uppercase tracking-widest mb-1">Taxa das Plataformas</h3>
+          <div className="text-3xl font-bold mb-2">{taxaMedia.toFixed(1).replace('.', ',')}%</div>
+          <p className="text-xs text-indigo-200 leading-relaxed font-medium">Esta é a média de taxa que o aplicativo está cobrando de você nas corridas que você registrou o valor bruto do passageiro. Baseado em {ganhosComTaxa.length} corridas logadas com o valor do passageiro.</p>
+        </div>
+      )}
 
       <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
         <div className="flex flex-col gap-1 mb-6">

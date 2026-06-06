@@ -5,8 +5,8 @@ import { cn } from '@/lib/utils';
 import { useStore } from '@/store';
 
 const iconMap: Record<string, any> = {
-  'Combustível': Car,
-  'Locadora': Wrench,
+  'Combustível / Recarga': Car,
+  'Locadora / Financiamento': Wrench,
   'Lucro Pessoal': Wallet,
   'IRPF': ShieldAlert,
   'Manutenção': Wrench,
@@ -22,22 +22,27 @@ export function Dashboard() {
   const [metaInput, setMetaInput] = useState('');
   
   const [amountInput, setAmountInput] = useState('');
-  const [expenseCategory, setExpenseCategory] = useState<string>('Combustível');
+  const [grossAmountInput, setGrossAmountInput] = useState('');
+  const [expenseCategory, setExpenseCategory] = useState<string>('Combustível / Recarga');
 
   const totalGanhos = ganhos.reduce((acc, curr) => acc + curr.amount, 0);
   const totalGastos = gastos.reduce((acc, curr) => acc + curr.amount, 0);
-  const lucroReal = totalGanhos - totalGastos;
+  
+  const lucroPessoalEnv = envelopes.find(e => e.name === 'Lucro Pessoal')?.percentage || 25;
+  const lucroAlocado = (totalGanhos * lucroPessoalEnv) / 100;
+  const lucroGastos = gastos.filter(g => g.category === 'Outros').reduce((acc, g) => acc + g.amount, 0);
+  const lucroReal = lucroAlocado - lucroGastos;
   
   // Calculate specific IRPF provision based on percentage of earnings
   const irpfPercentage = envelopes.find(e => e.name === 'IRPF')?.percentage || 7;
   const irpfProvision = (totalGanhos * irpfPercentage) / 100;
 
   // New Retention Features calculations
-  const faltaMeta = Math.max(0, metaDiaria - lucroReal);
-  const percentualMeta = Math.min(100, Math.round((parseFloat(Math.max(0, lucroReal).toString()) / metaDiaria) * 100)) || 0;
+  const faltaMeta = Math.max(0, metaDiaria - lucroAlocado);
+  const percentualMeta = Math.min(100, Math.round((parseFloat(Math.max(0, lucroAlocado).toString()) / metaDiaria) * 100)) || 0;
   
-  const estimativaMes = lucroReal > 0 ? lucroReal * 26 : 0; // Ex: assumes similar profit 26 days a month
-  const combustivelTotal = gastos.filter(g => g.category === 'Combustível').reduce((acc, g) => acc + g.amount, 0);
+  const estimativaMes = lucroAlocado > 0 ? lucroAlocado * 26 : 0; // Ex: assumes similar profit 26 days a month
+  const combustivelTotal = gastos.filter(g => g.category === 'Combustível / Recarga').reduce((acc, g) => acc + g.amount, 0);
 
   const handleSalvarMeta = (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,12 +56,18 @@ export function Dashboard() {
   const handleAddGanho = (e: React.FormEvent) => {
     e.preventDefault();
     if (!amountInput) return;
+    
+    const amount = parseFloat(amountInput.replace(',', '.'));
+    const grossAmount = grossAmountInput ? parseFloat(grossAmountInput.replace(',', '.')) : amount;
+
     addGanho({
-      amount: parseFloat(amountInput.replace(',', '.')),
+      amount: amount,
+      grossAmount: grossAmount,
       date: new Date().toISOString(),
       hour: new Date().getHours()
     });
     setAmountInput('');
+    setGrossAmountInput('');
     setIsAddingGain(false);
   };
 
@@ -169,7 +180,7 @@ export function Dashboard() {
           <div>
             <h4 className="text-sm font-bold text-amber-900">Alerta de Gasto</h4>
             <p className="text-xs text-amber-800 mt-1 font-medium leading-relaxed">
-              Atenção: seus gastos com combustível (R$ {combustivelTotal.toFixed(2).replace('.', ',')}) estão altos esta semana. Considere reavaliar suas rotas.
+              Atenção: seus gastos com combustível/recarga (R$ {combustivelTotal.toFixed(2).replace('.', ',')}) estão altos esta semana. Considere reavaliar suas rotas.
             </p>
           </div>
         </div>
@@ -217,7 +228,14 @@ export function Dashboard() {
         </div>
         <div className="flex flex-col gap-4">
           {envelopes.slice(0, 4).map(env => {
-            const amount = (totalGanhos * env.percentage) / 100;
+            const allocated = (totalGanhos * env.percentage) / 100;
+            let spent = 0;
+            if (env.name === 'Lucro Pessoal') {
+                spent = gastos.filter(g => g.category === 'Outros').reduce((acc, curr) => acc + curr.amount, 0);
+            } else {
+                spent = gastos.filter(g => g.category === env.name).reduce((acc, curr) => acc + curr.amount, 0);
+            }
+            const remaining = allocated - spent;
             return (
               <EnvelopeRow 
                 key={env.id}
@@ -226,7 +244,7 @@ export function Dashboard() {
                 color={env.color} 
                 iconBg={env.iconBg} 
                 iconColor={env.iconColor} 
-                amount={`R$ ${amount.toFixed(2).replace('.', ',')}`} 
+                amount={`R$ ${remaining.toFixed(2).replace('.', ',')}`} 
               />
             );
           })}
@@ -246,7 +264,19 @@ export function Dashboard() {
           <Modal title="Novo Ganho / Corrida" onClose={() => setIsAddingGain(false)}>
             <form onSubmit={handleAddGanho} className="flex flex-col gap-4 mt-4">
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">Valor Ganho (R$)</label>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Valor Cobrado do Passageiro (Bruto)</label>
+                <input 
+                  type="number" 
+                  step="0.01" 
+                  value={grossAmountInput} 
+                  onChange={(e) => setGrossAmountInput(e.target.value)} 
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 mb-2"
+                  placeholder="Ex: 65.00 (Opcional)"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Valor que você Recebeu (Líquido)</label>
                 <input 
                   type="number" 
                   step="0.01" 
@@ -254,7 +284,6 @@ export function Dashboard() {
                   onChange={(e) => setAmountInput(e.target.value)} 
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   placeholder="Ex: 50.00"
-                  autoFocus
                 />
               </div>
               <button disabled={!amountInput} type="submit" className="w-full bg-emerald-500 text-white font-bold py-3 rounded-xl hover:bg-emerald-600 transition-colors disabled:opacity-50 mt-2">
@@ -285,8 +314,8 @@ export function Dashboard() {
                   onChange={(e) => setExpenseCategory(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
-                  <option value="Combustível">Combustível</option>
-                  <option value="Locadora">Locadora (Aluguel)</option>
+                  <option value="Combustível / Recarga">Combustível / Recarga</option>
+                  <option value="Locadora / Financiamento">Locadora / Financiamento</option>
                   <option value="Manutenção">Manutenção / Peças</option>
                   <option value="Alimentação">Alimentação</option>
                   <option value="Outros">Outras coisas</option>

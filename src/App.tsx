@@ -101,8 +101,8 @@ export default function App() {
         <header className="px-6 py-5 sticky top-0 bg-[#F1F5F9]/80 backdrop-blur-md z-20 border-b border-slate-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-white shadow-sm">
-                B
+              <div className="w-8 h-8 rounded-lg overflow-hidden shadow-sm border border-slate-200">
+                <img src="/probolso.png" alt="Pro Bolso Logo" className="w-full h-full object-cover" />
               </div>
               <div>
                 <h1 className="text-lg font-bold tracking-tight text-slate-900 leading-tight">

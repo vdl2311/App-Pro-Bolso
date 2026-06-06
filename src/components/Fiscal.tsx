@@ -20,12 +20,37 @@ export function Fiscal() {
   const irpfTotalProjected = totalGanhos * 0.15;
   const irpfFinal = Math.max(0, irpfTotalProjected - (totalDeducoes * 0.2)); // Simulate deductions
 
+  const totalKm = ganhos.reduce((acc, g) => acc + (g.kmRodados || 0), 0);
+  const depreciacaoEstimada = totalKm * 0.35; // R$ 0.35 por KM
+  
+  const kmParaRevisao = 10000;
+  const revisaoRestante = kmParaRevisao - (totalKm % kmParaRevisao);
+  const revisaoPorcentagem = ((totalKm % kmParaRevisao) / kmParaRevisao) * 100;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className="flex flex-col gap-6 pb-32 mt-2"
     >
+      <div className="bg-red-50 p-6 rounded-3xl border border-red-100 shadow-sm">
+        <h2 className="text-xl font-bold text-red-900 flex items-center gap-2">
+          Custo Real por KM (O "Ralo" Invisível)
+        </h2>
+        <p className="text-xs text-red-800 mt-2 font-medium">A cada quilômetro rodado seu carro perde valor e o óleo gasta. Baseado em {totalKm.toFixed(1)} km rodados, estimamos uma depreciação de <strong className="font-bold text-red-900">R$ {depreciacaoEstimada.toFixed(2).replace('.', ',')}</strong> que você deve considerar.</p>
+        
+        <div className="mt-5">
+          <div className="flex justify-between items-end mb-2">
+            <span className="text-sm font-bold text-red-900">Alerta de Manutenção Preventiva</span>
+            <span className="text-xs font-bold text-red-700">Falta {revisaoRestante.toFixed(0)} km</span>
+          </div>
+          <div className="h-3 w-full bg-red-200 rounded-full overflow-hidden">
+            <div className="h-full bg-red-600 rounded-full" style={{ width: `${revisaoPorcentagem}%` }} />
+          </div>
+          <p className="text-xs text-red-700 mt-2">A próxima troca de óleo/pastilha está chegando. Guarde dinheiro antecipadamente para não parar de rodar!</p>
+        </div>
+      </div>
+
       <div className="flex justify-between items-center bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">Imposto de Renda (IRPF)</h2>

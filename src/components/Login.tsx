@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import { ShieldCheck, Lock, User, ArrowRight } from 'lucide-react';
 import { useStore } from '@/store';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
 export function Login() {
@@ -10,8 +10,27 @@ export function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
+
+  const handleResetPassword = async () => {
+    if (!email) {
+      setError('Digite seu e-mail acima para redefinir a senha.');
+      return;
+    }
+    try {
+      setIsLoading(true);
+      setError('');
+      setSuccessMsg('');
+      await sendPasswordResetEmail(auth, email);
+      setSuccessMsg('E-mail de redefinição enviado! Verifique sua caixa de entrada.');
+    } catch (err: any) {
+      setError('Erro ao enviar e-mail de redefinição. Verifique o e-mail digitado.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,6 +41,7 @@ export function Login() {
 
     setIsLoading(true);
     setError('');
+    setSuccessMsg('');
     
     try {
       if (isRegistering) {
@@ -33,13 +53,13 @@ export function Login() {
     } catch (err: any) {
       console.error(err);
       if (err.code === 'auth/email-already-in-use') {
-        setError('Este e-mail já está em uso. Por favor, acesse sua conta em vez de criar uma nova.');
+        setError('E-mail já em uso. Se você acabou de assinar, clique em "Esqueci minha senha" para criar sua senha de acesso.');
       } else if (err.code === 'auth/operation-not-allowed') {
         setError('O login por e-mail e senha não está ativado no Firebase. Por favor, ative-o no Console do Firebase (Authentication > Sign-in method).');
       } else if (isRegistering) {
         setError('Erro ao criar conta. A senha deve ter no mínimo 6 caracteres.');
       } else {
-        setError('Credenciais inválidas. Verifique se sua conta ou e-mail estão corretos.');
+        setError('Credenciais inválidas. Verifique se seu e-mail e senha estão corretos.');
       }
     } finally {
       setIsLoading(false);
@@ -56,8 +76,8 @@ export function Login() {
           animate={{ opacity: 1, y: 0 }}
           className="flex flex-col items-center justify-center mb-10"
         >
-          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mb-4 shadow-[0_0_40px_rgba(37,99,235,0.4)]">
-            <ShieldCheck className="w-8 h-8 text-white" />
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 overflow-hidden border border-slate-700/50 shadow-lg">
+            <img src="/probolso.png" alt="Pro Bolso Logo" className="w-full h-full object-cover" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-white mb-1">
             Pro Bolso
@@ -77,6 +97,11 @@ export function Login() {
           {error && (
             <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold p-3 rounded-xl mb-4 text-center">
               {error}
+            </div>
+          )}
+          {successMsg && (
+            <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold p-3 rounded-xl mb-4 text-center">
+              {successMsg}
             </div>
           )}
 
@@ -126,13 +151,23 @@ export function Login() {
             </button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-6 text-center flex flex-col gap-3">
             <button 
               onClick={() => setIsRegistering(!isRegistering)} 
+              type="button"
               className="text-sm font-medium text-slate-400 hover:text-white transition-colors"
             >
               {isRegistering ? 'Já tem uma conta? Acesse aqui' : 'Ainda não é assinante? Registre-se'}
             </button>
+            {!isRegistering && (
+              <button 
+                onClick={handleResetPassword} 
+                type="button"
+                className="text-xs font-medium text-slate-500 hover:text-white transition-colors"
+              >
+                Esqueci minha senha
+              </button>
+            )}
           </div>
         </motion.div>
         

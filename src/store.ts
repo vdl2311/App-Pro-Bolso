@@ -2,10 +2,14 @@ import { create } from 'zustand';
 
 export type CategoriaGasto = 'Combustível / Recarga' | 'Locadora / Financiamento' | 'Manutenção' | 'Alimentação' | 'Outros';
 
+export type Plataforma = 'Uber' | '99' | 'inDrive' | 'Particular';
+
 export interface Ganho {
   id: string;
   amount: number;
   grossAmount?: number;
+  plataforma?: Plataforma;
+  kmRodados?: number;
   date: string; // ISO string
   hour: number;
 }

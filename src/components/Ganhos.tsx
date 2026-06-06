@@ -29,6 +29,30 @@ export function Ganhos() {
   const totalNetComTaxa = ganhosComTaxa.reduce((acc, curr) => acc + curr.amount, 0);
   const taxaMedia = totalGrossComTaxa > 0 ? ((totalGrossComTaxa - totalNetComTaxa) / totalGrossComTaxa) * 100 : 0;
 
+  // Platform comparison logic
+  const platformStats: Record<string, { count: number, totalAmount: number, totalGross: number, totalKm: number }> = {};
+  ganhos.forEach(g => {
+    const pf = g.plataforma || 'Uber'; // Fallback for old records
+    if (!platformStats[pf]) {
+      platformStats[pf] = { count: 0, totalAmount: 0, totalGross: 0, totalKm: 0 };
+    }
+    platformStats[pf].count += 1;
+    platformStats[pf].totalAmount += g.amount;
+    platformStats[pf].totalGross += (g.grossAmount || g.amount);
+    platformStats[pf].totalKm += (g.kmRodados || 0);
+  });
+
+  const platformsArray = Object.entries(platformStats).map(([name, stats]) => {
+    return {
+      name,
+      avgNet: stats.count > 0 ? stats.totalAmount / stats.count : 0,
+      fee: stats.totalGross > 0 ? ((stats.totalGross - stats.totalAmount) / stats.totalGross) * 100 : 0,
+      valuePerKm: stats.totalKm > 0 ? stats.totalAmount / stats.totalKm : 0,
+      count: stats.count
+    };
+  }).sort((a, b) => b.totalAmount - a.totalAmount); // most profitable overall first
+
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -36,15 +60,41 @@ export function Ganhos() {
       className="flex flex-col gap-6 pb-32 mt-2"
     >
       <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-        <h2 className="text-2xl font-bold text-slate-900">Análise de Horários</h2>
-        <p className="text-sm text-slate-500 mt-1">Descubra os horários que dão mais dinheiro real.</p>
+        <h2 className="text-2xl font-bold text-slate-900">Análise e Comparação</h2>
+        <p className="text-sm text-slate-500 mt-1">Descubra os horários que dão mais dinheiro e qual aplicativo compensa mais.</p>
       </div>
 
       {taxaMedia > 0 && (
         <div className="bg-indigo-900 text-white p-6 rounded-3xl shadow-md border border-indigo-800">
-          <h3 className="text-sm font-bold text-indigo-300 uppercase tracking-widest mb-1">Taxa das Plataformas</h3>
+          <h3 className="text-sm font-bold text-indigo-300 uppercase tracking-widest mb-1">Taxa Média das Plataformas</h3>
           <div className="text-3xl font-bold mb-2">{taxaMedia.toFixed(1).replace('.', ',')}%</div>
-          <p className="text-xs text-indigo-200 leading-relaxed font-medium">Esta é a média de taxa que o aplicativo está cobrando de você nas corridas que você registrou o valor bruto do passageiro. Baseado em {ganhosComTaxa.length} corridas logadas com o valor do passageiro.</p>
+          <p className="text-xs text-indigo-200 leading-relaxed font-medium">Você paga em média essa taxa nas corridas (baseado em {ganhosComTaxa.length} registros). Saber que as empresas levam essa porcentagem te ajuda a focar em lucro real, não só faturamento.</p>
+        </div>
+      )}
+
+      {platformsArray.length > 0 && (
+        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+          <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Comparador de Plataformas</h3>
+          <div className="flex flex-col gap-3">
+            {platformsArray.map((p) => (
+              <div key={p.name} className="flex justify-between items-center bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <div className="flex flex-col">
+                  <span className="font-bold text-slate-900 text-base">{p.name}</span>
+                  <span className="text-xs text-slate-500 font-medium">{p.count} corridas</span>
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  {p.valuePerKm > 0 && (
+                    <span className="text-xs font-bold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-lg">R$ {p.valuePerKm.toFixed(2).replace('.', ',')} / KM Liquido</span>
+                  )}
+                  {p.fee > 0 ? (
+                    <span className="text-xs font-medium text-slate-400">Taxa: {p.fee.toFixed(1).replace('.', ',')}%</span>
+                  ) : (
+                    <span className="text-xs font-medium text-slate-400">Taxa: Não Registrada</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

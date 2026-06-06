@@ -23,6 +23,8 @@ export function Dashboard() {
   
   const [amountInput, setAmountInput] = useState('');
   const [grossAmountInput, setGrossAmountInput] = useState('');
+  const [kmInput, setKmInput] = useState('');
+  const [plataforma, setPlataforma] = useState<string>('Uber');
   const [expenseCategory, setExpenseCategory] = useState<string>('Combustível / Recarga');
 
   const totalGanhos = ganhos.reduce((acc, curr) => acc + curr.amount, 0);
@@ -59,15 +61,19 @@ export function Dashboard() {
     
     const amount = parseFloat(amountInput.replace(',', '.'));
     const grossAmount = grossAmountInput ? parseFloat(grossAmountInput.replace(',', '.')) : amount;
+    const km = kmInput ? parseFloat(kmInput.replace(',', '.')) : undefined;
 
     addGanho({
       amount: amount,
       grossAmount: grossAmount,
+      plataforma: plataforma as any,
+      kmRodados: km,
       date: new Date().toISOString(),
       hour: new Date().getHours()
     });
     setAmountInput('');
     setGrossAmountInput('');
+    setKmInput('');
     setIsAddingGain(false);
   };
 
@@ -285,6 +291,32 @@ export function Dashboard() {
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   placeholder="Ex: 50.00"
                 />
+              </div>
+              <div className="flex gap-4 mt-2">
+                <div className="flex-1">
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Plataforma</label>
+                  <select 
+                    value={plataforma} 
+                    onChange={(e) => setPlataforma(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option value="Uber">Uber</option>
+                    <option value="99">99</option>
+                    <option value="inDrive">inDrive</option>
+                    <option value="Particular">Particular</option>
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <label className="block text-sm font-bold text-slate-700 mb-1">KM Rodado</label>
+                  <input 
+                    type="number"
+                    step="0.1" 
+                    value={kmInput} 
+                    onChange={(e) => setKmInput(e.target.value)} 
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="Ex: 12.5 (Opcional)"
+                  />
+                </div>
               </div>
               <button disabled={!amountInput} type="submit" className="w-full bg-emerald-500 text-white font-bold py-3 rounded-xl hover:bg-emerald-600 transition-colors disabled:opacity-50 mt-2">
                 Salvar Ganho

@@ -157,13 +157,19 @@ export function Dashboard() {
         </div>
         
         {faltaMeta > 0 ? (
-          <p className="text-sm font-medium text-slate-600">
+          <p className="text-sm font-medium text-slate-600 mt-2">
             Falta <strong className="text-slate-900">R$ {faltaMeta.toFixed(2).replace('.', ',')}</strong> para sua meta de lucro de hoje.
           </p>
         ) : (
-          <p className="text-sm font-bold text-emerald-600 flex items-center gap-1">
-            <Trophy className="w-4 h-4" /> Parabéns! Você atingiu a meta de hoje!
-          </p>
+          <motion.div 
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", bounce: 0.5 }}
+            className="mt-3 inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-2 rounded-xl shadow-sm border border-emerald-200 w-full"
+          >
+            <Trophy className="w-5 h-5 text-emerald-500" />
+            <span className="text-sm font-bold">Meta atingida! Mandou muito bem! 🚀</span>
+          </motion.div>
         )}
       </div>
 

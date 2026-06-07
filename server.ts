@@ -5,9 +5,10 @@ import * as admin from 'firebase-admin';
 
 // Inicializa Firebase Admin SE tiver a chave no env
 // Se a chave não estiver no env (ex: ambiente dev inicial), ele ignora para não quebrar o app
-if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY && !admin.apps.length) {
+const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_KEY || process.env.FIREBASE_SERVICE_ACCOUNT;
+if (serviceAccountJson && !admin.apps.length) {
   try {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+    const serviceAccount = JSON.parse(serviceAccountJson);
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount)
     });

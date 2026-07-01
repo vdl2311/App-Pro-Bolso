@@ -1,7 +1,7 @@
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
-import * as admin from 'firebase-admin';
+import admin from 'firebase-admin';
 
 // Inicializa Firebase Admin SE tiver a chave no env
 // Se a chave não estiver no env (ex: ambiente dev inicial), ele ignora para não quebrar o app

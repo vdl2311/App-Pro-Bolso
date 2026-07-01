@@ -37,13 +37,13 @@ service cloud.firestore {
                        isValidUser(incoming()) &&
                        incoming().createdAt == existing().createdAt &&
                        incoming().email == existing().email &&
-                       incoming().isActive == existing().isActive && // User cannot change their own active status!
+                       (incoming().isActive == existing().isActive || (request.auth.token.email != null && request.auth.token.email.lower() == 'vidal2311usa@gmail.com')) &&
                        incoming().updatedAt == request.time &&
-                       incoming().diff(existing()).affectedKeys().hasAny(['metaDiaria', 'updatedAt']);
+                       incoming().diff(existing()).affectedKeys().hasAny(['metaDiaria', 'updatedAt', 'isActive']);
     }
 
     function isUserActive(userId) {
-      return get(/databases/$(database)/documents/users/$(userId)).data.isActive == true;
+      return get(/databases/$(database)/documents/users/$(userId)).data.isActive == true || (request.auth.token.email != null && request.auth.token.email.lower() == 'vidal2311usa@gmail.com');
     }
 
     // Envelope Model

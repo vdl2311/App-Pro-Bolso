@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Wallet, TrendingUp, Car, ShieldAlert, Wrench, Heart, PlusCircle, MinusCircle, X, Target, Bell, Trophy, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';

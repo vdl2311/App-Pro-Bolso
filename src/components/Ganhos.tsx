@@ -48,7 +48,8 @@ export function Ganhos() {
       avgNet: stats.count > 0 ? stats.totalAmount / stats.count : 0,
       fee: stats.totalGross > 0 ? ((stats.totalGross - stats.totalAmount) / stats.totalGross) * 100 : 0,
       valuePerKm: stats.totalKm > 0 ? stats.totalAmount / stats.totalKm : 0,
-      count: stats.count
+      count: stats.count,
+      totalAmount: stats.totalAmount
     };
   }).sort((a, b) => b.totalAmount - a.totalAmount); // most profitable overall first
 

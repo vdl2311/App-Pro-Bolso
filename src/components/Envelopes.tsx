@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Wallet, Car, Wrench, ShieldAlert, Heart, Lock, Plus, Edit2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useStore } from '@/store';
-import { useState } from 'react';
+import React, { useState } from 'react';
 
 const iconMap: Record<string, any> = {
   'Combustível / Recarga': Car,

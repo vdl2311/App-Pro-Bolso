@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { ShieldCheck, Lock, User, ArrowRight } from 'lucide-react';
 import { useStore } from '@/store';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
 export function Login() {
@@ -12,10 +12,12 @@ export function Login() {
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
   const [isRegistering, setIsRegistering] = useState(false);
 
   const handleResetPassword = async () => {
-    if (!email) {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
       setError('Digite seu e-mail acima para redefinir a senha.');
       return;
     }
@@ -23,7 +25,7 @@ export function Login() {
       setIsLoading(true);
       setError('');
       setSuccessMsg('');
-      await sendPasswordResetEmail(auth, email);
+      await sendPasswordResetEmail(auth, trimmedEmail);
       setSuccessMsg('E-mail de redefinição enviado! Verifique sua caixa de entrada.');
     } catch (err: any) {
       setError('Erro ao enviar e-mail de redefinição. Verifique o e-mail digitado.');
@@ -34,7 +36,8 @@ export function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !password) {
       setError('Preencha e-mail e senha para acessar.');
       return;
     }
@@ -45,19 +48,23 @@ export function Login() {
     
     try {
       if (isRegistering) {
-        await createUserWithEmailAndPassword(auth, email, password);
+        await import('firebase/auth').then(({ createUserWithEmailAndPassword }) => 
+          createUserWithEmailAndPassword(auth, trimmedEmail, password)
+        );
       } else {
-        await signInWithEmailAndPassword(auth, email, password);
+        await signInWithEmailAndPassword(auth, trimmedEmail, password);
       }
-      login(); 
+      // O App.tsx via onAuthStateChanged vai verificar o status no Firestore e chamar login() ou logout()
     } catch (err: any) {
       console.error(err);
-      if (err.code === 'auth/email-already-in-use') {
-        setError('E-mail já em uso. Se você acabou de assinar, clique em "Esqueci minha senha" para criar sua senha de acesso.');
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        setError(isRegistering ? 'Erro ao criar conta. Verifique seus dados.' : 'Senha incorreta ou conta não existe. Tente "Criar Conta" ou redefinição.');
+      } else if (err.code === 'auth/email-already-in-use') {
+        setError('Este e-mail já está em uso. Faça login ao invés de criar conta.');
+      } else if (err.code === 'auth/weak-password') {
+        setError('A senha deve ter pelo menos 6 caracteres.');
       } else if (err.code === 'auth/operation-not-allowed') {
-        setError('O login por e-mail e senha não está ativado no Firebase. Por favor, ative-o no Console do Firebase (Authentication > Sign-in method).');
-      } else if (isRegistering) {
-        setError('Erro ao criar conta. A senha deve ter no mínimo 6 caracteres.');
+        setError('Operação não permitida no Firebase.');
       } else {
         setError('Credenciais inválidas. Verifique se seu e-mail e senha estão corretos.');
       }
@@ -76,14 +83,14 @@ export function Login() {
           animate={{ opacity: 1, y: 0 }}
           className="flex flex-col items-center justify-center mb-10"
         >
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 overflow-hidden border border-slate-700/50 shadow-lg">
+          <div className="w-32 h-32 rounded-3xl flex items-center justify-center mb-6 overflow-hidden border border-slate-700/50 shadow-xl">
             <img src="/probolso.png" alt="Pro Bolso Logo" className="w-full h-full object-cover" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-white mb-1">
             Pro Bolso
           </h1>
           <p className="text-sm text-slate-400 font-medium tracking-wide uppercase">
-            Acesso do Motorista
+            {isRegistering ? 'Criar Conta' : 'Acesso do Motorista'}
           </p>
         </motion.div>
 
@@ -153,20 +160,26 @@ export function Login() {
 
           <div className="mt-6 text-center flex flex-col gap-3">
             <button 
-              onClick={() => setIsRegistering(!isRegistering)} 
+              onClick={() => { setIsRegistering(!isRegistering); setError(''); setSuccessMsg(''); }} 
               type="button"
-              className="text-sm font-medium text-slate-400 hover:text-white transition-colors"
+              className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
             >
-              {isRegistering ? 'Já tem uma conta? Acesse aqui' : 'Ainda não é assinante? Registre-se'}
+              {isRegistering ? 'Já tem uma conta? Faça login' : 'Não tem conta? Criar Conta'}
             </button>
+
             {!isRegistering && (
-              <button 
-                onClick={handleResetPassword} 
-                type="button"
-                className="text-xs font-medium text-slate-500 hover:text-white transition-colors"
-              >
-                Esqueci minha senha
-              </button>
+              <>
+                <p className="text-xs font-medium text-slate-500 mt-2">
+                  Apenas usuários com assinatura ativa têm acesso após criar conta.
+                </p>
+                <button 
+                  onClick={handleResetPassword} 
+                  type="button"
+                  className="text-sm font-bold text-blue-500 hover:text-blue-400 transition-colors"
+                >
+                  Esqueceu a senha?
+                </button>
+              </>
             )}
           </div>
         </motion.div>

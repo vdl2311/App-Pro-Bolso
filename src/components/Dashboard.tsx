@@ -387,6 +387,75 @@ export function Dashboard() {
           </Modal>
         )}
       </AnimatePresence>
+
+      {/* Últimos Lançamentos (Histórico) */}
+      <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm md:col-span-2">
+        <h3 className="font-bold text-slate-900 mb-4 flex items-center justify-between">
+          <span>Últimos Lançamentos</span>
+          <span className="text-xs text-slate-500 font-medium">Histórico de atividades</span>
+        </h3>
+        
+        {ganhos.length === 0 && gastos.length === 0 ? (
+          <div className="text-center py-6 text-slate-400 text-sm font-medium">
+            Nenhum lançamento registrado ainda.
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3 max-h-80 overflow-y-auto pr-1">
+            {[
+              ...ganhos.map(g => ({ ...g, type: 'ganho' as const })),
+              ...gastos.map(g => ({ ...g, type: 'gasto' as const }))
+            ]
+              .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+              .slice(0, 10)
+              .map((item) => {
+                const isGanho = item.type === 'ganho';
+                const dObj = new Date(item.date);
+                const formattedDate = isNaN(dObj.getTime())
+                  ? ''
+                  : `${String(dObj.getDate()).padStart(2, '0')}/${String(dObj.getMonth() + 1).padStart(2, '0')} às ${String(dObj.getHours()).padStart(2, '0')}:${String(dObj.getMinutes()).padStart(2, '0')}`;
+                
+                return (
+                  <div key={item.id} className="flex justify-between items-center bg-slate-50 p-3.5 rounded-xl border border-slate-100 hover:border-slate-200 transition-all">
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm",
+                        isGanho ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
+                      )}>
+                        {isGanho ? '+' : '-'}
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-slate-900">
+                          {isGanho ? `Corrida ${item.plataforma || 'Uber'}` : item.category}
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
+                          {formattedDate} {isGanho && item.kmRodados ? `• ${item.kmRodados} km` : ''}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className={cn("text-sm font-extrabold font-mono", isGanho ? "text-emerald-600" : "text-rose-600")}>
+                        R$ {item.amount.toFixed(2).replace('.', ',')}
+                      </div>
+                      <button
+                        onClick={() => {
+                          if (isGanho) {
+                            useStore.getState().deleteGanho(item.id);
+                          } else {
+                            useStore.getState().deleteGasto(item.id);
+                          }
+                        }}
+                        className="text-xs font-bold text-slate-400 hover:text-rose-600 bg-slate-100 hover:bg-rose-50 p-1.5 rounded-lg transition-colors"
+                        title="Deletar lançamento"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        )}
+      </div>
       
     </motion.div>
   );

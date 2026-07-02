@@ -2,109 +2,12 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if false;
-    }
-
-    // Global helpers
-    function isValidId(id) {
-      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
-    }
-    function incoming() { return request.resource.data; }
-    function existing() { return resource.data; }
-    function isSignedIn() { return request.auth != null; }
-
-    // User Model
-    function isValidUser(data) {
-      return data.keys().hasAll(['email', 'isActive', 'metaDiaria', 'createdAt', 'updatedAt']) &&
-             data.keys().size() == 5 &&
-             data.email is string && data.email.size() <= 200 &&
-             data.isActive is bool &&
-             data.metaDiaria is number &&
-             data.createdAt is timestamp &&
-             data.updatedAt is timestamp;
-    }
-
     match /users/{userId} {
-      allow read: if isSignedIn() && request.auth.uid == userId;
-      allow create: if isSignedIn() && request.auth.uid == userId &&
-                       isValidId(userId) &&
-                       isValidUser(incoming()) &&
-                       incoming().createdAt == request.time &&
-                       incoming().updatedAt == request.time;
+      allow read, write: if request.auth != null && request.auth.uid == userId;
       
-      allow update: if isSignedIn() && request.auth.uid == userId &&
-                       isValidUser(incoming()) &&
-                       incoming().createdAt == existing().createdAt &&
-                       incoming().email == existing().email &&
-                       incoming().updatedAt == request.time &&
-                       incoming().diff(existing()).affectedKeys().hasAny(['metaDiaria', 'updatedAt', 'isActive']);
-    }
-
-    function isUserActive(userId) {
-      return true;
-    }
-
-    // Envelope Model
-    function isValidEnvelope(data) {
-      return data.keys().hasAll(['percentage', 'updatedAt']) &&
-             data.keys().size() == 2 &&
-             data.percentage is number &&
-             data.updatedAt is timestamp;
-    }
-
-    match /users/{userId}/envelopes/{envelopeId} {
-      allow read: if isSignedIn() && request.auth.uid == userId && isUserActive(userId);
-      allow create: if isSignedIn() && request.auth.uid == userId && isUserActive(userId) &&
-                       isValidId(userId) && isValidId(envelopeId) &&
-                       isValidEnvelope(incoming()) &&
-                       incoming().updatedAt == request.time;
-      allow update: if isSignedIn() && request.auth.uid == userId && isUserActive(userId) &&
-                       isValidEnvelope(incoming()) &&
-                       incoming().updatedAt == request.time;
-    }
-
-    // Ganho Model
-    function isValidGanho(data) {
-      return data.keys().hasAll(['amount', 'date', 'createdAt']) &&
-             data.keys().size() == 3 &&
-             data.amount is number &&
-             data.date is string && data.date.size() <= 30 &&
-             data.createdAt is timestamp;
-    }
-
-    match /users/{userId}/ganhos/{ganhoId} {
-      allow read: if isSignedIn() && request.auth.uid == userId && isUserActive(userId);
-      allow create: if isSignedIn() && request.auth.uid == userId && isUserActive(userId) &&
-                       isValidId(userId) && isValidId(ganhoId) &&
-                       isValidGanho(incoming()) &&
-                       incoming().createdAt == request.time;
-      allow update: if isSignedIn() && request.auth.uid == userId && isUserActive(userId) &&
-                       isValidGanho(incoming()) &&
-                       incoming().createdAt == existing().createdAt;
-      allow delete: if isSignedIn() && request.auth.uid == userId && isUserActive(userId);
-    }
-
-    // Gasto Model
-    function isValidGasto(data) {
-      return data.keys().hasAll(['amount', 'category', 'date', 'createdAt']) &&
-             data.keys().size() == 4 &&
-             data.amount is number &&
-             data.category is string && data.category.size() <= 50 &&
-             data.date is string && data.date.size() <= 30 &&
-             data.createdAt is timestamp;
-    }
-
-    match /users/{userId}/gastos/{gastoId} {
-      allow read: if isSignedIn() && request.auth.uid == userId && isUserActive(userId);
-      allow create: if isSignedIn() && request.auth.uid == userId && isUserActive(userId) &&
-                       isValidId(userId) && isValidId(gastoId) &&
-                       isValidGasto(incoming()) &&
-                       incoming().createdAt == request.time;
-      allow update: if isSignedIn() && request.auth.uid == userId && isUserActive(userId) &&
-                       isValidGasto(incoming()) &&
-                       incoming().createdAt == existing().createdAt;
-      allow delete: if isSignedIn() && request.auth.uid == userId && isUserActive(userId);
+      match /{allChildren=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
     }
   }
 }

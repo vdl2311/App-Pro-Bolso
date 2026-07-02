@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { doc, setDoc, deleteDoc, serverTimestamp, getDocs, collection, writeBatch } from 'firebase/firestore';
+import { auth, db } from './lib/firebase';
 
 export type CategoriaGasto = 'Combustível / Recarga' | 'Locadora / Financiamento' | 'Manutenção' | 'Alimentação' | 'Outros';
 
@@ -40,13 +42,19 @@ interface AppState {
   isAuthenticated: boolean;
   authError: string;
   setAuthError: (error: string) => void;
+  setGanhos: (ganhos: Ganho[]) => void;
+  setGastos: (gastos: Gasto[]) => void;
+  setEnvelopes: (envelopes: Envelope[]) => void;
   addGanho: (ganho: Omit<Ganho, 'id'>) => void;
   addGasto: (gasto: Omit<Gasto, 'id'>) => void;
+  deleteGanho: (id: string) => void;
+  deleteGasto: (id: string) => void;
   updateEnvelopePercentage: (id: number, percentage: number) => void;
   setMetaDiaria: (meta: number) => void;
   login: () => void;
   logout: () => void;
   resetData: () => void;
+  clearLocalData: () => void;
 }
 
 const defaultEnvelopes: Envelope[] = [
@@ -60,7 +68,7 @@ const defaultEnvelopes: Envelope[] = [
 
 export const useStore = create<AppState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       ganhos: [],
       gastos: [],
       envelopes: defaultEnvelopes,
@@ -69,13 +77,52 @@ export const useStore = create<AppState>()(
       authError: '',
       setAuthError: (error) => set({ authError: error }),
       
-      addGanho: (ganho) => set((state) => ({
-        ganhos: [{ ...ganho, id: Math.random().toString(36).substring(7) }, ...state.ganhos]
-      })),
+      setGanhos: (ganhos) => set({ ganhos }),
+      setGastos: (gastos) => set({ gastos }),
+      setEnvelopes: (envelopes) => set({ envelopes }),
+      
+      addGanho: (ganho) => {
+        const user = auth.currentUser;
+        const newId = Math.random().toString(36).substring(7);
+        const fullGanho = { ...ganho, id: newId };
+        
+        set((state) => ({
+          ganhos: [fullGanho, ...state.ganhos]
+        }));
 
-      addGasto: (gasto) => set((state) => ({
-        gastos: [{ ...gasto, id: Math.random().toString(36).substring(7) }, ...state.gastos]
-      })),
+        if (user) {
+          const docRef = doc(db, 'users', user.uid, 'ganhos', newId);
+          setDoc(docRef, {
+            amount: ganho.amount,
+            grossAmount: ganho.grossAmount ?? ganho.amount,
+            plataforma: ganho.plataforma || 'Uber',
+            kmRodados: ganho.kmRodados ?? null,
+            date: ganho.date,
+            hour: ganho.hour,
+            createdAt: serverTimestamp()
+          }).catch(err => console.error("Erro ao salvar ganho no Firestore:", err));
+        }
+      },
+
+      addGasto: (gasto) => {
+        const user = auth.currentUser;
+        const newId = Math.random().toString(36).substring(7);
+        const fullGasto = { ...gasto, id: newId };
+
+        set((state) => ({
+          gastos: [fullGasto, ...state.gastos]
+        }));
+
+        if (user) {
+          const docRef = doc(db, 'users', user.uid, 'gastos', newId);
+          setDoc(docRef, {
+            amount: gasto.amount,
+            category: gasto.category,
+            date: gasto.date,
+            createdAt: serverTimestamp()
+          }).catch(err => console.error("Erro ao salvar gasto no Firestore:", err));
+        }
+      },
 
       updateEnvelopePercentage: (id, percentage) => set((state) => {
         const currentEnvelopes = [...state.envelopes];
@@ -151,15 +198,113 @@ export const useStore = create<AppState>()(
             }
         }
 
+        const user = auth.currentUser;
+        if (user) {
+          updatedEnvelopes.forEach(env => {
+            const docRef = doc(db, 'users', user.uid, 'envelopes', env.id.toString());
+            setDoc(docRef, {
+              percentage: env.percentage,
+              updatedAt: serverTimestamp()
+            }, { merge: true }).catch(err => console.error("Erro ao salvar envelope no Firestore:", err));
+          });
+        }
+
         return { envelopes: updatedEnvelopes };
       }),
 
-      setMetaDiaria: (meta) => set({ metaDiaria: meta }),
+      setMetaDiaria: (meta) => {
+        const currentMeta = get().metaDiaria;
+        if (meta === currentMeta) return;
+
+        set({ metaDiaria: meta });
+
+        const user = auth.currentUser;
+        if (user) {
+          const userRef = doc(db, 'users', user.uid);
+          setDoc(userRef, {
+            metaDiaria: meta,
+            updatedAt: serverTimestamp()
+          }, { merge: true }).catch(err => {
+            console.error("Erro ao salvar meta diária no Firestore:", err);
+          });
+        }
+      },
+
+      deleteGanho: (id) => {
+        const user = auth.currentUser;
+        set((state) => ({
+          ganhos: state.ganhos.filter(g => g.id !== id)
+        }));
+
+        if (user) {
+          const docRef = doc(db, 'users', user.uid, 'ganhos', id);
+          deleteDoc(docRef).catch(err => console.error("Erro ao deletar ganho no Firestore:", err));
+        }
+      },
+
+      deleteGasto: (id) => {
+        const user = auth.currentUser;
+        set((state) => ({
+          gastos: state.gastos.filter(g => g.id !== id)
+        }));
+
+        if (user) {
+          const docRef = doc(db, 'users', user.uid, 'gastos', id);
+          deleteDoc(docRef).catch(err => console.error("Erro ao deletar gasto no Firestore:", err));
+        }
+      },
 
       login: () => set({ isAuthenticated: true }),
       logout: () => set({ isAuthenticated: false }),
 
-      resetData: () => set({ ganhos: [], gastos: [], envelopes: defaultEnvelopes, metaDiaria: 350 })
+      resetData: async () => {
+        const user = auth.currentUser;
+        set({ ganhos: [], gastos: [], envelopes: defaultEnvelopes, metaDiaria: 350 });
+        
+        if (user) {
+          try {
+            const userRef = doc(db, 'users', user.uid);
+            await setDoc(userRef, { metaDiaria: 350, updatedAt: serverTimestamp() }, { merge: true });
+
+            for (const env of defaultEnvelopes) {
+              const docRef = doc(db, 'users', user.uid, 'envelopes', env.id.toString());
+              await setDoc(docRef, {
+                name: env.name,
+                percentage: env.percentage,
+                color: env.color,
+                iconBg: env.iconBg,
+                iconColor: env.iconColor,
+                locked: env.locked || false,
+                updatedAt: serverTimestamp()
+              });
+            }
+
+            const querySnapshotGanhos = await getDocs(collection(db, 'users', user.uid, 'ganhos'));
+            if (!querySnapshotGanhos.empty) {
+              const batch = writeBatch(db);
+              querySnapshotGanhos.forEach((docSnap) => {
+                batch.delete(docSnap.ref);
+              });
+              await batch.commit();
+            }
+
+            const querySnapshotGastos = await getDocs(collection(db, 'users', user.uid, 'gastos'));
+            if (!querySnapshotGastos.empty) {
+              const batch = writeBatch(db);
+              querySnapshotGastos.forEach((docSnap) => {
+                batch.delete(docSnap.ref);
+              });
+              await batch.commit();
+            }
+          } catch (err) {
+            console.error("Erro ao limpar dados no Firestore:", err);
+          }
+        }
+      },
+
+      clearLocalData: () => {
+        set({ ganhos: [], gastos: [], envelopes: defaultEnvelopes, metaDiaria: 350 });
+      }
     }),
     {
       name: 'probolso-storage',

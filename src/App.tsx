@@ -69,7 +69,12 @@ export default function App() {
           unsubDoc();
           unsubDoc = null;
         }
-        useStore.getState().resetData();
+        // IMPORTANTE: não chamar resetData() aqui. Este branch roda toda vez que o
+        // Firebase reporta "sem usuário", inclusive no instante inicial do app antes
+        // da sessão persistida ser restaurada. Apagar os dados locais aqui fazia o
+        // usuário perder tudo que tinha salvo simplesmente ao reabrir o app.
+        // O reset de dados deve ser uma ação explícita do usuário (botão "Sair" ou
+        // "Resetar Dados"), nunca um efeito colateral automático da checagem de auth.
         logout();
         setIsInitializing(false);
       }

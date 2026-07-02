@@ -58,15 +58,15 @@ export function Ganhos() {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col gap-6 pb-32 mt-2"
+      className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-32 mt-2"
     >
-      <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+      <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm md:col-span-2">
         <h2 className="text-2xl font-bold text-slate-900">Análise e Comparação</h2>
         <p className="text-sm text-slate-500 mt-1">Descubra os horários que dão mais dinheiro e qual aplicativo compensa mais.</p>
       </div>
 
       {taxaMedia > 0 && (
-        <div className="bg-indigo-900 text-white p-6 rounded-3xl shadow-md border border-indigo-800">
+        <div className="bg-indigo-900 text-white p-6 rounded-3xl shadow-md border border-indigo-800 md:col-span-2">
           <h3 className="text-sm font-bold text-indigo-300 uppercase tracking-widest mb-1">Taxa Média das Plataformas</h3>
           <div className="text-3xl font-bold mb-2">{taxaMedia.toFixed(1).replace('.', ',')}%</div>
           <p className="text-xs text-indigo-200 leading-relaxed font-medium">Você paga em média essa taxa nas corridas (baseado em {ganhosComTaxa.length} registros). Saber que as empresas levam essa porcentagem te ajuda a focar em lucro real, não só faturamento.</p>
@@ -130,7 +130,7 @@ export function Ganhos() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4 md:col-span-2">
         <div className="bg-emerald-50 border border-emerald-100 p-5 rounded-3xl flex flex-col gap-2">
           <TrendingUp className="w-5 h-5 text-emerald-600 mb-1" />
           <div className="text-xs text-emerald-800 font-bold uppercase tracking-wider">Seu Melhor Horário</div>

@@ -41,9 +41,9 @@ export function Envelopes() {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col gap-6 pb-32 mt-2"
+      className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-32 mt-2"
     >
-      <div className="flex justify-between items-center bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+      <div className="flex justify-between items-center bg-white p-6 rounded-3xl border border-slate-200 shadow-sm md:col-span-2">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">Meus Envelopes</h2>
           <p className="text-sm text-slate-500 mt-1">Sua divisão baseada em R$ {totalGanhos.toFixed(2).replace('.', ',')} ganhos</p>
@@ -55,7 +55,7 @@ export function Envelopes() {
         </div>
       </div>
 
-      <div className="bg-emerald-50 border border-emerald-100 p-5 rounded-3xl flex items-start gap-4 shadow-sm">
+      <div className="bg-emerald-50 border border-emerald-100 p-5 rounded-3xl flex items-start gap-4 shadow-sm md:col-span-2">
         <div className="p-2 bg-emerald-100 rounded-xl mt-0.5 shrink-0 text-emerald-600">
           <ShieldAlert className="w-6 h-6" />
         </div>
@@ -67,7 +67,7 @@ export function Envelopes() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:col-span-2">
         {envelopes.map((env) => {
           const amount = (totalGanhos * env.percentage) / 100;
           const Icon = iconMap[env.name] || Wallet;

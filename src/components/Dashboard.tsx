@@ -93,10 +93,10 @@ export function Dashboard() {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col gap-6 pb-32 mt-2"
+      className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-32 mt-2"
     >
       {/* Header */}
-      <div className="flex items-center justify-between mt-2">
+      <div className="flex items-center justify-between mt-2 md:col-span-2">
         <div>
           <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Lucro Limpo (Pro Bolso)</h2>
           <div className="flex items-baseline gap-3 mt-1">
@@ -118,7 +118,7 @@ export function Dashboard() {
       </div>
 
       {/* Action Buttons */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4 md:col-span-2">
         <button 
           onClick={() => setIsAddingGain(true)}
           className="bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-emerald-100 transition-colors shadow-sm"
@@ -187,7 +187,7 @@ export function Dashboard() {
       </div>
 
       {combustivelTotal > 150 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex gap-3 items-start shadow-sm">
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex gap-3 items-start shadow-sm md:col-span-2">
           <Bell className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
           <div>
             <h4 className="text-sm font-bold text-amber-900">Alerta de Gasto</h4>
@@ -264,7 +264,7 @@ export function Dashboard() {
       </div>
       
       {/* Fiscal Quick View */}
-      <div className="bg-slate-900 rounded-3xl p-6 text-white shadow-xl">
+      <div className="bg-slate-900 rounded-3xl p-6 text-white shadow-xl md:col-span-2">
         <h3 className="text-sm font-bold text-slate-400 mb-2">CAIXA PARA O IMPOSTO (IRPF)</h3>
         <div className="text-3xl font-bold mb-1">R$ {irpfProvision.toFixed(2).replace('.', ',')}</div>
         <p className="text-xs text-slate-400">Separado automaticamente ({irpfPercentage}% dos ganhos)</p>

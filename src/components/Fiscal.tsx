@@ -31,9 +31,9 @@ export function Fiscal() {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col gap-6 pb-32 mt-2"
+      className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-32 mt-2"
     >
-      <div className="bg-red-50 p-6 rounded-3xl border border-red-100 shadow-sm">
+      <div className="bg-red-50 p-6 rounded-3xl border border-red-100 shadow-sm md:col-span-2">
         <h2 className="text-xl font-bold text-red-900 flex items-center gap-2">
           Custo Real por KM (O "Ralo" Invisível)
         </h2>
@@ -51,7 +51,7 @@ export function Fiscal() {
         </div>
       </div>
 
-      <div className="flex justify-between items-center bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+      <div className="flex justify-between items-center bg-white p-6 rounded-3xl border border-slate-200 shadow-sm md:col-span-2">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">Imposto de Renda (IRPF)</h2>
           <p className="text-sm text-slate-500 mt-1">Sem surpresas com o Leão</p>
@@ -125,7 +125,7 @@ export function Fiscal() {
         </div>
       </div>
 
-      <button className="w-full bg-white border border-slate-200 text-slate-900 font-bold py-4 rounded-2xl flex justify-center items-center gap-2 hover:bg-slate-50 transition shadow-sm">
+      <button className="w-full bg-white border border-slate-200 text-slate-900 font-bold py-4 rounded-2xl flex justify-center items-center gap-2 hover:bg-slate-50 transition shadow-sm md:col-span-2">
         Enviar Recibos para o Contador <FileText className="w-4 h-4 text-blue-600 ml-1" />
       </button>
 

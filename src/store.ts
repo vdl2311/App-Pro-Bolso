@@ -65,7 +65,7 @@ export const useStore = create<AppState>()(
       gastos: [],
       envelopes: defaultEnvelopes,
       metaDiaria: 350,
-      isAuthenticated: true,
+      isAuthenticated: false,
       authError: '',
       setAuthError: (error) => set({ authError: error }),
       

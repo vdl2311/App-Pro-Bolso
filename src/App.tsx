@@ -14,25 +14,29 @@ import { LayoutGrid, Wallet, BarChart2, ShieldAlert, RotateCcw, LogOut } from 'l
 import { cn } from './lib/utils';
 import { AnimatePresence, motion } from 'motion/react';
 import { useStore } from './store';
-import { auth, db } from './lib/firebase';
+import { auth, db, handleFirestoreError, OperationType } from './lib/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, serverTimestamp, collection } from 'firebase/firestore';
 
 export default function App() {
-  const { isAuthenticated, login, logout, setMetaDiaria } = useStore();
+  const { isAuthenticated, login, logout, setMetaDiaria, setGanhos, setGastos, setEnvelopes } = useStore();
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
     let unsubDoc: (() => void) | null = null;
+    let unsubGanhos: (() => void) | null = null;
+    let unsubGastos: (() => void) | null = null;
+    let unsubEnvelopes: (() => void) | null = null;
 
     const unsubAuth = onAuthStateChanged(auth, async (user) => {
       if (user) {
         const userRef = doc(db, 'users', user.uid);
         
-        if (unsubDoc) {
-          unsubDoc();
-        }
+        if (unsubDoc) unsubDoc();
+        if (unsubGanhos) unsubGanhos();
+        if (unsubGastos) unsubGastos();
+        if (unsubEnvelopes) unsubEnvelopes();
 
         unsubDoc = onSnapshot(userRef, async (docSnap) => {
           if (docSnap.exists()) {
@@ -58,23 +62,64 @@ export default function App() {
             }
           }
         }, (error: any) => {
-          console.error("Firestore Profile Error, entering resilient fallback mode:", error);
-          setMetaDiaria(350);
-          login();
+          handleFirestoreError(error, OperationType.GET, `users/${user.uid}`);
+        });
+
+        // Sync Ganhos from scratch and sort in-memory
+        const queryGanhos = collection(db, 'users', user.uid, 'ganhos');
+        unsubGanhos = onSnapshot(queryGanhos, (snapshot) => {
+          const list: any[] = [];
+          snapshot.forEach((docSnap) => {
+            list.push({ id: docSnap.id, ...docSnap.data() });
+          });
+          list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          setGanhos(list);
+        }, (error) => {
+          handleFirestoreError(error, OperationType.LIST, `users/${user.uid}/ganhos`);
+        });
+
+        // Sync Gastos from scratch and sort in-memory
+        const queryGastos = collection(db, 'users', user.uid, 'gastos');
+        unsubGastos = onSnapshot(queryGastos, (snapshot) => {
+          const list: any[] = [];
+          snapshot.forEach((docSnap) => {
+            list.push({ id: docSnap.id, ...docSnap.data() });
+          });
+          list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          setGastos(list);
+        }, (error) => {
+          handleFirestoreError(error, OperationType.LIST, `users/${user.uid}/gastos`);
+        });
+
+        // Sync Envelopes config
+        const envelopesRef = collection(db, 'users', user.uid, 'envelopes');
+        unsubEnvelopes = onSnapshot(envelopesRef, (snapshot) => {
+          const list: any[] = [];
+          snapshot.forEach((docSnap) => {
+            list.push({ id: Number(docSnap.id), ...docSnap.data() });
+          });
+          if (list.length > 0) {
+            const defaultEnvs = [...useStore.getState().envelopes];
+            const merged = defaultEnvs.map(env => {
+              const saved = list.find(l => l.id === env.id);
+              if (saved) {
+                return { ...env, percentage: saved.percentage };
+              }
+              return env;
+            });
+            setEnvelopes(merged);
+          }
+        }, (error) => {
+          handleFirestoreError(error, OperationType.LIST, `users/${user.uid}/envelopes`);
         });
 
         setIsInitializing(false);
       } else {
-        if (unsubDoc) {
-          unsubDoc();
-          unsubDoc = null;
-        }
-        // IMPORTANTE: não chamar resetData() aqui. Este branch roda toda vez que o
-        // Firebase reporta "sem usuário", inclusive no instante inicial do app antes
-        // da sessão persistida ser restaurada. Apagar os dados locais aqui fazia o
-        // usuário perder tudo que tinha salvo simplesmente ao reabrir o app.
-        // O reset de dados deve ser uma ação explícita do usuário (botão "Sair" ou
-        // "Resetar Dados"), nunca um efeito colateral automático da checagem de auth.
+        if (unsubDoc) { unsubDoc(); unsubDoc = null; }
+        if (unsubGanhos) { unsubGanhos(); unsubGanhos = null; }
+        if (unsubGastos) { unsubGastos(); unsubGastos = null; }
+        if (unsubEnvelopes) { unsubEnvelopes(); unsubEnvelopes = null; }
+        useStore.getState().clearLocalData();
         logout();
         setIsInitializing(false);
       }
@@ -82,9 +127,12 @@ export default function App() {
 
     return () => {
       if (unsubDoc) unsubDoc();
+      if (unsubGanhos) unsubGanhos();
+      if (unsubGastos) unsubGastos();
+      if (unsubEnvelopes) unsubEnvelopes();
       unsubAuth();
     };
-  }, [login, logout, setMetaDiaria]);
+  }, [login, logout, setMetaDiaria, setGanhos, setGastos, setEnvelopes]);
 
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -96,7 +144,7 @@ export default function App() {
 
   const handleLogout = async () => {
     await signOut(auth);
-    useStore.getState().resetData();
+    useStore.getState().clearLocalData();
     logout();
     setShowLogoutConfirm(false);
   };

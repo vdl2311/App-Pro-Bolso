@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { doc, setDoc, deleteDoc, serverTimestamp, getDocs, collection, writeBatch } from 'firebase/firestore';
-import { auth, db } from './lib/firebase';
+import { auth, db, handleFirestoreError, OperationType } from './lib/firebase';
 
 export type CategoriaGasto = 'Combustível / Recarga' | 'Locadora / Financiamento' | 'Manutenção' | 'Alimentação' | 'Outros';
 
@@ -100,7 +100,7 @@ export const useStore = create<AppState>()(
             date: ganho.date,
             hour: ganho.hour,
             createdAt: serverTimestamp()
-          }).catch(err => console.error("Erro ao salvar ganho no Firestore:", err));
+          }).catch(err => handleFirestoreError(err, OperationType.WRITE, `users/${user.uid}/ganhos/${newId}`));
         }
       },
 
@@ -120,7 +120,7 @@ export const useStore = create<AppState>()(
             category: gasto.category,
             date: gasto.date,
             createdAt: serverTimestamp()
-          }).catch(err => console.error("Erro ao salvar gasto no Firestore:", err));
+          }).catch(err => handleFirestoreError(err, OperationType.WRITE, `users/${user.uid}/gastos/${newId}`));
         }
       },
 
@@ -205,7 +205,7 @@ export const useStore = create<AppState>()(
             setDoc(docRef, {
               percentage: env.percentage,
               updatedAt: serverTimestamp()
-            }, { merge: true }).catch(err => console.error("Erro ao salvar envelope no Firestore:", err));
+            }, { merge: true }).catch(err => handleFirestoreError(err, OperationType.WRITE, `users/${user.uid}/envelopes/${env.id}`));
           });
         }
 
@@ -224,9 +224,7 @@ export const useStore = create<AppState>()(
           setDoc(userRef, {
             metaDiaria: meta,
             updatedAt: serverTimestamp()
-          }, { merge: true }).catch(err => {
-            console.error("Erro ao salvar meta diária no Firestore:", err);
-          });
+          }, { merge: true }).catch(err => handleFirestoreError(err, OperationType.WRITE, `users/${user.uid}`));
         }
       },
 
@@ -238,7 +236,7 @@ export const useStore = create<AppState>()(
 
         if (user) {
           const docRef = doc(db, 'users', user.uid, 'ganhos', id);
-          deleteDoc(docRef).catch(err => console.error("Erro ao deletar ganho no Firestore:", err));
+          deleteDoc(docRef).catch(err => handleFirestoreError(err, OperationType.DELETE, `users/${user.uid}/ganhos/${id}`));
         }
       },
 
@@ -250,7 +248,7 @@ export const useStore = create<AppState>()(
 
         if (user) {
           const docRef = doc(db, 'users', user.uid, 'gastos', id);
-          deleteDoc(docRef).catch(err => console.error("Erro ao deletar gasto no Firestore:", err));
+          deleteDoc(docRef).catch(err => handleFirestoreError(err, OperationType.DELETE, `users/${user.uid}/gastos/${id}`));
         }
       },
 
@@ -297,7 +295,7 @@ export const useStore = create<AppState>()(
               await batch.commit();
             }
           } catch (err) {
-            console.error("Erro ao limpar dados no Firestore:", err);
+            handleFirestoreError(err, OperationType.WRITE, `users/${user.uid}`);
           }
         }
       },

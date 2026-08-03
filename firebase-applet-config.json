@@ -1,9 +1,10 @@
 {
   "projectId": "pro-bolso",
-  "appId": "1:583418514687:web:a0419c574ea9deddff10ca",
+  "appId": "1:583418514687:web:2eed7d38981ceba3ff10ca",
   "apiKey": "AIzaSyBDJOVd5643h_uTIDfm3ClGpddUG16P948",
   "authDomain": "pro-bolso.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-appprobolso-8eb2c363-48ba-4c99-b090-db94854feca4",
   "storageBucket": "pro-bolso.firebasestorage.app",
   "messagingSenderId": "583418514687",
-  "measurementId": "G-WSCTS9YKH0"
+  "measurementId": ""
 }

@@ -6,5 +6,7 @@
   "firestoreDatabaseId": "ai-studio-appprobolso-8eb2c363-48ba-4c99-b090-db94854feca4",
   "storageBucket": "pro-bolso.firebasestorage.app",
   "messagingSenderId": "583418514687",
-  "measurementId": ""
+  "measurementId": "",
+  "oAuthClientId": "583418514687-6p1c04jao3eq0maipqh2mjil5h3n6eak.apps.googleusercontent.com",
+  "recaptchaSiteKey": ""
 }

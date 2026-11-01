@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Wallet, TrendingUp, Car, ShieldAlert, Wrench, Heart, PlusCircle, MinusCircle, X, Target, Bell, Trophy, Zap, Camera, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useStore } from '@/store';
-import { OcrGanhoModal } from './OcrGanhoModal';
+import { AutomacaoRecibosModal } from './AutomacaoRecibosModal';
 
 const iconMap: Record<string, any> = {
   'Combustível / Recarga': Car,
@@ -139,10 +139,10 @@ export function Dashboard() {
           className="bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-2xl p-3 flex flex-col items-center justify-center gap-1.5 hover:bg-indigo-100 transition-colors shadow-sm relative overflow-hidden group"
         >
           <div className="absolute top-1 right-1 bg-amber-400 text-slate-900 text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase">
-            IA
+            AUTO
           </div>
-          <Camera className="w-5 h-5 text-indigo-600" />
-          <span className="text-xs font-bold text-center">Ler Print</span>
+          <Zap className="w-5 h-5 text-indigo-600" />
+          <span className="text-xs font-bold text-center">Auto-Recibo</span>
         </button>
         <button 
           onClick={() => setIsAddingExpense(true)}
@@ -322,8 +322,8 @@ export function Dashboard() {
                 onClick={() => { setIsAddingGain(false); setIsOcrOpen(true); }}
                 className="bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 p-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition"
               >
-                <Camera className="w-4 h-4 text-indigo-600" />
-                <span>📸 Prefere ler o print da tela com IA?</span>
+                <Zap className="w-4 h-4 text-amber-500" />
+                <span>⚡ Auto-Lançar Recibo (Uber / 99 / iFood)</span>
               </button>
 
               <div>
@@ -509,8 +509,8 @@ export function Dashboard() {
         )}
       </div>
       
-      {/* Modal OCR Inteligente de Prints */}
-      <OcrGanhoModal 
+      {/* Modal Central de Automação de Recibos */}
+      <AutomacaoRecibosModal 
         isOpen={isOcrOpen} 
         onClose={() => setIsOcrOpen(false)} 
       />

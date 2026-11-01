@@ -154,6 +154,96 @@ Não inclua crases markdown nem explicações fora do JSON.`;
     }
   });
 
+  // API route - Leitura e Auto-Lançamento Direto de Recibos e Notificações (Sem Subir Print)
+  app.post("/api/auto-recibo", async (req, res) => {
+    try {
+      const { text, notificationText, emailSubject, emailBody } = req.body;
+      const conteudoCompleto = [emailSubject, emailBody, notificationText, text].filter(Boolean).join("\n\n");
+
+      if (!conteudoCompleto.trim()) {
+        return res.status(400).json({ error: "Nenhum dado ou texto de recibo recebido." });
+      }
+
+      let parsedGanho: any = null;
+
+      if (process.env.GEMINI_API_KEY) {
+        try {
+          const prompt = `Você é um motor de ingestão automática de recibos e notificações para motoristas de aplicativo (Uber, 99, iFood, inDrive, Lalamove).
+Analise o seguinte conteúdo bruto de recibo/notificação recebido automaticamente:
+
+"""
+${conteudoCompleto}
+"""
+
+Extraia com exatidão as informações financeiras e de trajeto para lançamento automático no sistema:
+1. plataforma: "Uber" | "99" | "iFood" | "inDrive" | "Lalamove" | "Particular" | "Outro"
+2. amount: valor líquido pago ao motorista (em R$, número decimal com ponto, ex: 38.50)
+3. grossAmount: valor total pago pelo passageiro antes da taxa (se visível, senão o mesmo que amount)
+4. kmRodados: distância percorrida em quilômetros (número decimal, ou null)
+5. horario: hora do dia da corrida 0-23 (número inteiro)
+6. data: data no formato YYYY-MM-DD
+7. resumo: frase curta explicando a corrida (ex: "Recibo Uber de R$ 42,00 (14 km)")
+
+Responda EXCLUSIVAMENTE em formato JSON puro, sem markdown e sem crases:
+{
+  "plataforma": "Uber",
+  "amount": 38.50,
+  "grossAmount": 49.00,
+  "kmRodados": 12.4,
+  "horario": 15,
+  "data": "2026-11-01",
+  "resumo": "Recibo Uber finalizado"
+}`;
+
+          const aiResponse = await ai.models.generateContent({
+            model: 'gemini-3.8-flash',
+            contents: prompt
+          });
+
+          const raw = aiResponse.text || '';
+          const cleaned = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
+          try {
+            parsedGanho = JSON.parse(cleaned);
+          } catch (e) {
+            const m = raw.match(/\{[\s\S]*\}/);
+            if (m) parsedGanho = JSON.parse(m[0]);
+          }
+        } catch (aiErr) {
+          console.error("Erro na extração IA do recibo automático:", aiErr);
+        }
+      }
+
+      // Fallback com regex
+      if (!parsedGanho) {
+        let detectedPlat = 'Uber';
+        if (/99|noventa e nove/i.test(conteudoCompleto)) detectedPlat = '99';
+        else if (/ifood/i.test(conteudoCompleto)) detectedPlat = 'iFood';
+        else if (/indrive/i.test(conteudoCompleto)) detectedPlat = 'inDrive';
+
+        const moneyMatch = conteudoCompleto.match(/R\$\s*([\d]+[.,][\d]{2})/i) || conteudoCompleto.match(/([\d]+[.,][\d]{2})/);
+        const amount = moneyMatch ? parseFloat(moneyMatch[1].replace(',', '.')) : 32.00;
+
+        const kmMatch = conteudoCompleto.match(/([\d]+[.,]?[\d]*)\s*km/i);
+        const km = kmMatch ? parseFloat(kmMatch[1].replace(',', '.')) : null;
+
+        parsedGanho = {
+          plataforma: detectedPlat,
+          amount: amount,
+          grossAmount: Number((amount * 1.25).toFixed(2)),
+          kmRodados: km,
+          horario: new Date().getHours(),
+          data: new Date().toISOString().split('T')[0],
+          resumo: `Recibo automático ${detectedPlat}`
+        };
+      }
+
+      return res.json({ success: true, data: parsedGanho });
+    } catch (err: any) {
+      console.error("Erro no auto-recibo:", err);
+      return res.status(500).json({ error: "Erro ao processar recibo automático." });
+    }
+  });
+
   // API route - Hotmart Webhook
   app.post("/api/hotmart-webhook", async (req, res) => {
     try {

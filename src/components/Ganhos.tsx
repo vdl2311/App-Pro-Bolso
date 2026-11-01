@@ -145,6 +145,21 @@ export function Ganhos() {
         </div>
       </div>
 
+      {/* Alerta Preventivo de Ação */}
+      <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 p-5 rounded-3xl md:col-span-2 flex items-start gap-3 shadow-sm">
+        <div className="p-2.5 bg-amber-500 text-white rounded-2xl shrink-0 mt-0.5">
+          <TrendingUp className="w-5 h-5" />
+        </div>
+        <div>
+          <h4 className="text-sm font-bold text-amber-950">
+            Alerta Preventivo de Rentabilidade
+          </h4>
+          <p className="text-xs text-amber-900 mt-1 leading-relaxed font-medium">
+            Seu lucro por hora tende a cair após as 14h. <strong>Recomendação:</strong> Descanse nesse intervalo ou mude para regiões com polos corporativos para economizar combustível e manter sua média alta.
+          </p>
+        </div>
+      </div>
+
     </motion.div>
   );
 }

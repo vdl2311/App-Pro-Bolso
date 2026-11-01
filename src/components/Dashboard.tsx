@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Wallet, TrendingUp, Car, ShieldAlert, Wrench, Heart, PlusCircle, MinusCircle, X, Target, Bell, Trophy, Zap } from 'lucide-react';
+import { Wallet, TrendingUp, Car, ShieldAlert, Wrench, Heart, PlusCircle, MinusCircle, X, Target, Bell, Trophy, Zap, Camera, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useStore } from '@/store';
+import { OcrGanhoModal } from './OcrGanhoModal';
 
 const iconMap: Record<string, any> = {
   'Combustível / Recarga': Car,
@@ -15,10 +16,11 @@ const iconMap: Record<string, any> = {
 };
 
 export function Dashboard() {
-  const { ganhos, gastos, envelopes, addGanho, addGasto, metaDiaria, setMetaDiaria } = useStore();
+  const { ganhos, gastos, envelopes, addGanho, addGasto, metaDiaria, setMetaDiaria, manutencoes, odometroAtual } = useStore();
   const [isAddingGain, setIsAddingGain] = useState(false);
   const [isAddingExpense, setIsAddingExpense] = useState(false);
   const [isEditingMeta, setIsEditingMeta] = useState(false);
+  const [isOcrOpen, setIsOcrOpen] = useState(false);
   const [metaInput, setMetaInput] = useState('');
   
   const [amountInput, setAmountInput] = useState('');
@@ -26,6 +28,12 @@ export function Dashboard() {
   const [kmInput, setKmInput] = useState('');
   const [plataforma, setPlataforma] = useState<string>('Uber');
   const [expenseCategory, setExpenseCategory] = useState<string>('Combustível / Recarga');
+
+  // Identifica se há alerta de manutenção preventiva
+  const itemAlertaManutencao = manutencoes?.map(item => {
+    const kmRestante = item.intervaloKm - Math.max(0, odometroAtual - item.ultimoKmTroca);
+    return { ...item, kmRestante };
+  }).sort((a, b) => a.kmRestante - b.kmRestante)[0];
 
   const totalGanhos = ganhos.reduce((acc, curr) => acc + curr.amount, 0);
   const totalGastos = gastos.reduce((acc, curr) => acc + curr.amount, 0);
@@ -118,22 +126,56 @@ export function Dashboard() {
       </div>
 
       {/* Action Buttons */}
-      <div className="grid grid-cols-2 gap-4 md:col-span-2">
+      <div className="grid grid-cols-3 gap-3 md:col-span-2">
         <button 
           onClick={() => setIsAddingGain(true)}
-          className="bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-emerald-100 transition-colors shadow-sm"
+          className="bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-2xl p-3 flex flex-col items-center justify-center gap-1.5 hover:bg-emerald-100 transition-colors shadow-sm"
         >
-          <PlusCircle className="w-6 h-6 text-emerald-500" />
-          <span className="text-sm font-bold">Lançar Ganho</span>
+          <PlusCircle className="w-5 h-5 text-emerald-500" />
+          <span className="text-xs font-bold text-center">Lançar Ganho</span>
+        </button>
+        <button 
+          onClick={() => setIsOcrOpen(true)}
+          className="bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-2xl p-3 flex flex-col items-center justify-center gap-1.5 hover:bg-indigo-100 transition-colors shadow-sm relative overflow-hidden group"
+        >
+          <div className="absolute top-1 right-1 bg-amber-400 text-slate-900 text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase">
+            IA
+          </div>
+          <Camera className="w-5 h-5 text-indigo-600" />
+          <span className="text-xs font-bold text-center">Ler Print</span>
         </button>
         <button 
           onClick={() => setIsAddingExpense(true)}
-          className="bg-red-50 text-red-700 border border-red-200 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-red-100 transition-colors shadow-sm"
+          className="bg-red-50 text-red-700 border border-red-200 rounded-2xl p-3 flex flex-col items-center justify-center gap-1.5 hover:bg-red-100 transition-colors shadow-sm"
         >
-          <MinusCircle className="w-6 h-6 text-red-500" />
-          <span className="text-sm font-bold">Lançar Gasto</span>
+          <MinusCircle className="w-5 h-5 text-red-500" />
+          <span className="text-xs font-bold text-center">Lançar Gasto</span>
         </button>
       </div>
+
+      {/* Alerta Preventivo de Manutenção (Troca de Papel) */}
+      {itemAlertaManutencao && itemAlertaManutencao.kmRestante <= 500 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex gap-3 items-center justify-between shadow-sm md:col-span-2">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-amber-500 text-white rounded-xl shrink-0">
+              <Wrench className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-800">
+                  Previsão do Veículo
+                </span>
+                <span className="text-[10px] bg-amber-200 text-amber-900 font-bold px-1.5 py-0.5 rounded">
+                  {itemAlertaManutencao.kmRestante <= 0 ? "Vencido" : `Faltam ${itemAlertaManutencao.kmRestante} km`}
+                </span>
+              </div>
+              <h4 className="text-xs font-bold text-slate-900 mt-0.5">
+                {itemAlertaManutencao.nome} (Estimativa: R$ {itemAlertaManutencao.custoEstimado.toFixed(2).replace('.', ',')})
+              </h4>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Meta Diária Card */}
       <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm relative overflow-hidden">
@@ -274,53 +316,63 @@ export function Dashboard() {
       <AnimatePresence>
         {isAddingGain && (
           <Modal title="Novo Ganho / Corrida" onClose={() => setIsAddingGain(false)}>
-            <form onSubmit={handleAddGanho} className="flex flex-col gap-4 mt-4">
+            <form onSubmit={handleAddGanho} className="flex flex-col gap-3 mt-3">
+              <button 
+                type="button" 
+                onClick={() => { setIsAddingGain(false); setIsOcrOpen(true); }}
+                className="bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 p-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition"
+              >
+                <Camera className="w-4 h-4 text-indigo-600" />
+                <span>📸 Prefere ler o print da tela com IA?</span>
+              </button>
+
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">Valor Cobrado do Passageiro (Bruto)</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Valor Cobrado do Passageiro (Bruto)</label>
                 <input 
                   type="number" 
                   step="0.01" 
                   value={grossAmountInput} 
                   onChange={(e) => setGrossAmountInput(e.target.value)} 
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 mb-2"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   placeholder="Ex: 65.00 (Opcional)"
-                  autoFocus
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">Valor que você Recebeu (Líquido)</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Valor que você Recebeu (Líquido)</label>
                 <input 
                   type="number" 
                   step="0.01" 
                   value={amountInput} 
                   onChange={(e) => setAmountInput(e.target.value)} 
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   placeholder="Ex: 50.00"
                 />
               </div>
-              <div className="flex gap-4 mt-2">
+              <div className="flex gap-3">
                 <div className="flex-1">
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Plataforma</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Plataforma</label>
                   <select 
                     value={plataforma} 
                     onChange={(e) => setPlataforma(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs"
                   >
                     <option value="Uber">Uber</option>
                     <option value="99">99</option>
+                    <option value="iFood">iFood</option>
                     <option value="inDrive">inDrive</option>
+                    <option value="Lalamove">Lalamove</option>
                     <option value="Particular">Particular</option>
                   </select>
                 </div>
                 <div className="flex-1">
-                  <label className="block text-sm font-bold text-slate-700 mb-1">KM Rodado</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">KM Rodado</label>
                   <input 
                     type="number"
                     step="0.1" 
                     value={kmInput} 
                     onChange={(e) => setKmInput(e.target.value)} 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    placeholder="Ex: 12.5 (Opcional)"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs"
+                    placeholder="Ex: 12.5"
                   />
                 </div>
               </div>
@@ -457,6 +509,11 @@ export function Dashboard() {
         )}
       </div>
       
+      {/* Modal OCR Inteligente de Prints */}
+      <OcrGanhoModal 
+        isOpen={isOcrOpen} 
+        onClose={() => setIsOcrOpen(false)} 
+      />
     </motion.div>
   );
 }

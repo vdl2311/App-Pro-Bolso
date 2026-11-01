@@ -1,1 +1,1 @@
-export type TabType = 'dashboard' | 'envelopes' | 'lucro' | 'fiscal';
+export type TabType = 'dashboard' | 'envelopes' | 'manutencao' | 'parcerias' | 'lucro' | 'fiscal';

@@ -10,7 +10,10 @@ import { Envelopes } from './components/Envelopes';
 import { Ganhos } from './components/Ganhos';
 import { Fiscal } from './components/Fiscal';
 import { Login } from './components/Login';
-import { LayoutGrid, Wallet, BarChart2, ShieldAlert, RotateCcw, LogOut } from 'lucide-react';
+import { Manutencao } from './components/Manutencao';
+import { Parcerias } from './components/Parcerias';
+import { PanicoModal } from './components/PanicoModal';
+import { LayoutGrid, Wallet, BarChart2, ShieldAlert, RotateCcw, LogOut, Wrench, Tag, AlertOctagon } from 'lucide-react';
 import { cn } from './lib/utils';
 import { AnimatePresence, motion } from 'motion/react';
 import { useStore } from './store';
@@ -22,6 +25,7 @@ export default function App() {
   const { isAuthenticated, login, logout, setMetaDiaria, setGanhos, setGastos, setEnvelopes } = useStore();
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [isInitializing, setIsInitializing] = useState(true);
+  const [showPanicoModal, setShowPanicoModal] = useState(false);
 
   useEffect(() => {
     let unsubDoc: (() => void) | null = null;
@@ -183,6 +187,14 @@ export default function App() {
             </div>
             <div className="flex items-center gap-2">
               <button 
+                onClick={() => setShowPanicoModal(true)}
+                className="relative flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-full font-black text-xs shadow-md shadow-rose-600/30 transition animate-pulse"
+                title="Botão de Pânico Financeiro & Socorro Mecânico"
+              >
+                <AlertOctagon className="w-4 h-4 text-amber-300" />
+                <span>SOS</span>
+              </button>
+              <button 
                 onClick={() => setShowResetConfirm(true)}
                 className="relative p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors bg-white rounded-full border border-slate-200 shadow-sm"
                 title="Resetar Dados"
@@ -273,14 +285,22 @@ export default function App() {
           <AnimatePresence mode="wait">
             {activeTab === 'dashboard' && <Dashboard key="dashboard" />}
             {activeTab === 'envelopes' && <Envelopes key="envelopes" />}
+            {activeTab === 'manutencao' && <Manutencao key="manutencao" />}
+            {activeTab === 'parcerias' && <Parcerias key="parcerias" />}
             {activeTab === 'lucro' && <Ganhos key="lucro" />}
             {activeTab === 'fiscal' && <Fiscal key="fiscal" />}
           </AnimatePresence>
         </main>
 
+        {/* Modal Botão de Pânico Financeiro */}
+        <PanicoModal 
+          isOpen={showPanicoModal} 
+          onClose={() => setShowPanicoModal(false)} 
+        />
+
         {/* Bottom Navigation */}
-        <nav className="bg-white/95 backdrop-blur-xl border-t border-slate-200 pb-8 pt-3 px-6 z-30 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)]">
-          <div className="flex justify-between items-center max-w-sm mx-auto">
+        <nav className="bg-white/95 backdrop-blur-xl border-t border-slate-200 pb-7 pt-2 px-3 z-30 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)]">
+          <div className="flex justify-between items-center max-w-lg mx-auto">
             <NavItem 
               active={activeTab === 'dashboard'} 
               onClick={() => setActiveTab('dashboard')} 
@@ -292,6 +312,18 @@ export default function App() {
               onClick={() => setActiveTab('envelopes')} 
               icon={Wallet} 
               label="Envelopes" 
+            />
+            <NavItem 
+              active={activeTab === 'manutencao'} 
+              onClick={() => setActiveTab('manutencao')} 
+              icon={Wrench} 
+              label="Veículo" 
+            />
+            <NavItem 
+              active={activeTab === 'parcerias'} 
+              onClick={() => setActiveTab('parcerias')} 
+              icon={Tag} 
+              label="Vantagens" 
             />
             <NavItem 
               active={activeTab === 'lucro'} 

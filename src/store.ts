@@ -5,7 +5,7 @@ import { auth, db, handleFirestoreError, OperationType } from './lib/firebase';
 
 export type CategoriaGasto = 'Combustível / Recarga' | 'Locadora / Financiamento' | 'Manutenção' | 'Alimentação' | 'Outros';
 
-export type Plataforma = 'Uber' | '99' | 'inDrive' | 'Particular';
+export type Plataforma = 'Uber' | '99' | 'inDrive' | 'iFood' | 'Lalamove' | 'Particular' | 'Outro';
 
 export interface Ganho {
   id: string;
@@ -34,17 +34,59 @@ export interface Envelope {
   locked?: boolean;
 }
 
+export interface ManutencaoItem {
+  id: string;
+  nome: string;
+  intervaloKm: number;
+  custoEstimado: number;
+  ultimoKmTroca: number;
+  categoria: string;
+}
+
+export interface EconomiaParceria {
+  id: string;
+  parceiro: string;
+  categoria: string;
+  valorEconomizado: number;
+  data: string;
+}
+
+export const defaultManutencoesMoto: ManutencaoItem[] = [
+  { id: 'oleo', nome: 'Troca de Óleo e Filtro', intervaloKm: 3000, custoEstimado: 45, ultimoKmTroca: 0, categoria: 'Motor' },
+  { id: 'pastilha', nome: 'Pastilhas de Freio / Lonas', intervaloKm: 8000, custoEstimado: 75, ultimoKmTroca: 0, categoria: 'Segurança' },
+  { id: 'relacao', nome: 'Kit Relação (Corrente/Coroa/Pinhão)', intervaloKm: 15000, custoEstimado: 140, ultimoKmTroca: 0, categoria: 'Transmissão' },
+  { id: 'pneu', nome: 'Pneu Traseiro', intervaloKm: 18000, custoEstimado: 230, ultimoKmTroca: 0, categoria: 'Rodagem' },
+  { id: 'vela', nome: 'Vela de Ignição e Filtro de Ar', intervaloKm: 10000, custoEstimado: 60, ultimoKmTroca: 0, categoria: 'Injeção' }
+];
+
+export const defaultManutencoesCarro: ManutencaoItem[] = [
+  { id: 'oleo', nome: 'Troca de Óleo do Motor e Filtro', intervaloKm: 7500, custoEstimado: 180, ultimoKmTroca: 0, categoria: 'Motor' },
+  { id: 'pastilha', nome: 'Pastilhas de Freio Dianteiras', intervaloKm: 15000, custoEstimado: 190, ultimoKmTroca: 0, categoria: 'Segurança' },
+  { id: 'pneu', nome: 'Pneus e Geometria', intervaloKm: 35000, custoEstimado: 480, ultimoKmTroca: 0, categoria: 'Rodagem' },
+  { id: 'correia', nome: 'Correia Dentada e Tensor', intervaloKm: 45000, custoEstimado: 450, ultimoKmTroca: 0, categoria: 'Motor' },
+  { id: 'alinhamento', nome: 'Alinhamento e Balanceamento', intervaloKm: 10000, custoEstimado: 120, ultimoKmTroca: 0, categoria: 'Rodagem' }
+];
+
 interface AppState {
   ganhos: Ganho[];
   gastos: Gasto[];
   envelopes: Envelope[];
   metaDiaria: number;
+  tipoVeiculo: 'moto' | 'carro';
+  odometroAtual: number;
+  manutencoes: ManutencaoItem[];
+  economias: EconomiaParceria[];
   isAuthenticated: boolean;
   authError: string;
   setAuthError: (error: string) => void;
   setGanhos: (ganhos: Ganho[]) => void;
   setGastos: (gastos: Gasto[]) => void;
   setEnvelopes: (envelopes: Envelope[]) => void;
+  setTipoVeiculo: (tipo: 'moto' | 'carro') => void;
+  setOdometroAtual: (km: number) => void;
+  registrarTrocaManutencao: (id: string, kmRealizada?: number) => void;
+  reservarParaEnvelopeManutencao: (valor: number, motivo: string) => void;
+  registrarEconomia: (parceiro: string, categoria: string, valor: number) => void;
   addGanho: (ganho: Omit<Ganho, 'id'>) => void;
   addGasto: (gasto: Omit<Gasto, 'id'>) => void;
   deleteGanho: (id: string) => void;
@@ -73,6 +115,10 @@ export const useStore = create<AppState>()(
       gastos: [],
       envelopes: defaultEnvelopes,
       metaDiaria: 350,
+      tipoVeiculo: 'moto',
+      odometroAtual: 24500,
+      manutencoes: defaultManutencoesMoto,
+      economias: [],
       isAuthenticated: false,
       authError: '',
       setAuthError: (error) => set({ authError: error }),
@@ -80,6 +126,41 @@ export const useStore = create<AppState>()(
       setGanhos: (ganhos) => set({ ganhos }),
       setGastos: (gastos) => set({ gastos }),
       setEnvelopes: (envelopes) => set({ envelopes }),
+
+      setTipoVeiculo: (tipo) => set((state) => ({
+        tipoVeiculo: tipo,
+        manutencoes: tipo === 'carro' ? defaultManutencoesCarro : defaultManutencoesMoto
+      })),
+
+      setOdometroAtual: (km) => set({ odometroAtual: km }),
+
+      registrarTrocaManutencao: (id, kmRealizada) => set((state) => {
+        const kmAtual = kmRealizada ?? state.odometroAtual;
+        return {
+          manutencoes: state.manutencoes.map(m => m.id === id ? { ...m, ultimoKmTroca: kmAtual } : m)
+        };
+      }),
+
+      reservarParaEnvelopeManutencao: (valor, _motivo) => {
+        get().addGasto({
+          amount: valor,
+          category: 'Manutenção',
+          date: new Date().toISOString()
+        });
+      },
+
+      registrarEconomia: (parceiro, categoria, valor) => set((state) => ({
+        economias: [
+          {
+            id: Math.random().toString(36).substring(7),
+            parceiro,
+            categoria,
+            valorEconomizado: valor,
+            data: new Date().toISOString()
+          },
+          ...state.economias
+        ]
+      })),
       
       addGanho: (ganho) => {
         const user = auth.currentUser;
@@ -87,7 +168,8 @@ export const useStore = create<AppState>()(
         const fullGanho = { ...ganho, id: newId };
         
         set((state) => ({
-          ganhos: [fullGanho, ...state.ganhos]
+          ganhos: [fullGanho, ...state.ganhos],
+          odometroAtual: ganho.kmRodados ? Number((state.odometroAtual + ganho.kmRodados).toFixed(1)) : state.odometroAtual
         }));
 
         if (user) {
@@ -257,7 +339,16 @@ export const useStore = create<AppState>()(
 
       resetData: async () => {
         const user = auth.currentUser;
-        set({ ganhos: [], gastos: [], envelopes: defaultEnvelopes, metaDiaria: 350 });
+        set({
+          ganhos: [],
+          gastos: [],
+          envelopes: defaultEnvelopes,
+          metaDiaria: 350,
+          tipoVeiculo: 'moto',
+          odometroAtual: 24500,
+          manutencoes: defaultManutencoesMoto,
+          economias: []
+        });
         
         if (user) {
           try {
@@ -301,7 +392,16 @@ export const useStore = create<AppState>()(
       },
 
       clearLocalData: () => {
-        set({ ganhos: [], gastos: [], envelopes: defaultEnvelopes, metaDiaria: 350 });
+        set({
+          ganhos: [],
+          gastos: [],
+          envelopes: defaultEnvelopes,
+          metaDiaria: 350,
+          tipoVeiculo: 'moto',
+          odometroAtual: 24500,
+          manutencoes: defaultManutencoesMoto,
+          economias: []
+        });
       }
     }),
     {

@@ -31,7 +31,7 @@ export function Fiscal() {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-32 mt-2"
+      className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4"
     >
       <div className="bg-red-50 p-6 rounded-3xl border border-red-100 shadow-sm md:col-span-2">
         <h2 className="text-xl font-bold text-red-900 flex items-center gap-2">

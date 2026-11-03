@@ -127,12 +127,26 @@ export const useStore = create<AppState>()(
       setGastos: (gastos) => set({ gastos }),
       setEnvelopes: (envelopes) => set({ envelopes }),
 
-      setTipoVeiculo: (tipo) => set((state) => ({
-        tipoVeiculo: tipo,
-        manutencoes: tipo === 'carro' ? defaultManutencoesCarro : defaultManutencoesMoto
-      })),
+      setTipoVeiculo: (tipo) => {
+        set((state) => ({
+          tipoVeiculo: tipo,
+          manutencoes: tipo === 'carro' ? defaultManutencoesCarro : defaultManutencoesMoto
+        }));
+        const user = auth.currentUser;
+        if (user) {
+          const userRef = doc(db, 'users', user.uid);
+          setDoc(userRef, { tipoVeiculo: tipo, updatedAt: serverTimestamp() }, { merge: true }).catch(err => handleFirestoreError(err, OperationType.WRITE, `users/${user.uid}`));
+        }
+      },
 
-      setOdometroAtual: (km) => set({ odometroAtual: km }),
+      setOdometroAtual: (km) => {
+        set({ odometroAtual: km });
+        const user = auth.currentUser;
+        if (user) {
+          const userRef = doc(db, 'users', user.uid);
+          setDoc(userRef, { odometroAtual: km, updatedAt: serverTimestamp() }, { merge: true }).catch(err => handleFirestoreError(err, OperationType.WRITE, `users/${user.uid}`));
+        }
+      },
 
       registrarTrocaManutencao: (id, kmRealizada) => set((state) => {
         const kmAtual = kmRealizada ?? state.odometroAtual;

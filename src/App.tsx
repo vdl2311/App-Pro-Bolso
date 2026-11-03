@@ -48,6 +48,12 @@ export default function App() {
             if (data.isActive === false) {
               setDoc(userRef, { isActive: true, updatedAt: serverTimestamp() }, { merge: true }).catch(console.error);
             }
+            if (typeof data.odometroAtual === 'number') {
+              useStore.getState().setOdometroAtual(data.odometroAtual);
+            }
+            if (data.tipoVeiculo === 'moto' || data.tipoVeiculo === 'carro') {
+              useStore.getState().setTipoVeiculo(data.tipoVeiculo);
+            }
             setMetaDiaria(data.metaDiaria || 350);
             login();
           } else {
@@ -281,7 +287,7 @@ export default function App() {
         )}
 
         {/* Content Area */}
-        <main className="flex-1 overflow-y-auto p-6 pb-24 disable-scrollbar">
+        <main className="flex-1 overflow-y-auto px-4 py-3 md:px-6 md:py-4 pb-14 md:pb-6 disable-scrollbar">
           <AnimatePresence mode="wait">
             {activeTab === 'dashboard' && <Dashboard key="dashboard" />}
             {activeTab === 'envelopes' && <Envelopes key="envelopes" />}

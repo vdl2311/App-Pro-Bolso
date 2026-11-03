@@ -101,10 +101,10 @@ export function Dashboard() {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-32 mt-2"
+      className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4"
     >
       {/* Header */}
-      <div className="flex items-center justify-between mt-2 md:col-span-2">
+      <div className="flex items-center justify-between md:col-span-2">
         <div>
           <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Lucro Limpo (Pro Bolso)</h2>
           <div className="flex items-baseline gap-3 mt-1">

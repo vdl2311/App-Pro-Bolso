@@ -124,7 +124,7 @@ export function Parcerias() {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6 pb-32 mt-2"
+      className="space-y-4 pb-4"
     >
       {/* Placar de Economia Real */}
       <div className="bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-900 rounded-3xl p-6 text-white shadow-lg relative overflow-hidden">
